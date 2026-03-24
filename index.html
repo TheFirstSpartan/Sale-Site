@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Robert Malone Jr. - Interactive IP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        :root {
+            --crt-green: #14fdce;
+            --crt-amber: #ffb000;
+            --kof-red: #ff3e3e;
+            --kof-blue: #3e94ff;
+            --vhs-black: #121212;
+            --neo-gold: #ffd700;
+        }
+
+        body {
+            background: #000;
+            color: var(--crt-green);
+            font-family: 'VT323', monospace;
+            margin: 0;
+            user-select: none;
+            overflow: hidden; 
+        }
+
+        /* --- CRT EFFECTS --- */
+        .crt-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.05));
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none; z-index: 9999; opacity: 0.5;
+        }
+
+        .vignette {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            box-shadow: inset 0 0 250px rgba(0,0,0,0.9);
+            pointer-events: none; z-index: 9998;
+        }
+
+        canvas#noise {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; opacity: 0.08; z-index: 9997;
+        }
+
+        /* --- KOF 2002 STYLED UI --- */
+        .neo-panel {
+            border: 2px solid #fff;
+            background: rgba(10, 10, 10, 0.95);
+            box-shadow: 6px 6px 0 var(--kof-red);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .clickable-panel:hover {
+            transform: translateY(-2px);
+            cursor: pointer;
+        }
+
+        .kof-header {
+            background: linear-gradient(90deg, var(--kof-red) 0%, transparent 100%);
+            color: white; padding: 4px 12px; font-style: italic; font-size: 1.4rem;
+            margin-bottom: 15px; border-left: 5px solid white;
+        }
+
+        .kof-title-main {
+            font-size: 4.5rem; font-weight: 900; font-style: italic;
+            text-shadow: 4px 4px 0 var(--kof-red), -2px -2px 0 var(--kof-blue);
+            transform: skewX(-10deg); line-height: 0.9; text-align: center;
+        }
+
+        /* --- MINI CRT TV MODAL --- */
+        #crt-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2000; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        #crt-modal.visible { opacity: 1; pointer-events: auto; }
+
+        .tv-frame {
+            width: 90%; max-width: 500px;
+            background: #2a2a2a;
+            border: 15px solid #1a1a1a;
+            border-radius: 40px;
+            box-shadow: 0 0 50px rgba(0,0,0,1), inset 0 0 20px rgba(255,255,255,0.1);
+            position: relative;
+            transform: scale(0.8); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #crt-modal.visible .tv-frame { transform: scale(1); }
+
+        .tv-screen {
+            background: #0a110a;
+            margin: 10px; padding: 25px;
+            border-radius: 20px;
+            border: 4px solid #000;
+            position: relative; overflow: hidden;
+            min-height: 300px;
+            box-shadow: inset 0 0 40px rgba(20, 253, 206, 0.1);
+        }
+
+        /* --- VHS INTERACTION --- */
+        #vhs-tape {
+            width: 250px; height: 135px; background: #1a1a1a; border-radius: 4px;
+            cursor: grab; display: flex; flex-direction: column; align-items: center;
+            padding: 12px; border: 1px solid #333; box-shadow: 0 15px 40px rgba(0,0,0,0.9);
+            z-index: 500; position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%);
+        }
+        #vhs-tape.dragging { cursor: grabbing; z-index: 1000; transform: translate(-50%, -50%) scale(1.1); }
+        
+        #vhs-slot {
+            width: 330px; height: 75px; background: #0a0a0a; border: 4px solid #333;
+            border-top: 10px solid #000; margin-top: 120px;
+            display: flex; justify-content: center; align-items: center;
+            color: #444; font-size: 1.6rem; transition: 0.2s;
+        }
+        #vhs-slot.active { border-color: var(--neo-gold); color: #fff; background: #111; }
+
+        .hidden { display: none !important; }
+
+        /* --- PRICE TAGS --- */
+        .gold-tag { color: var(--neo-gold); text-shadow: 2px 2px 0 #000; font-size: 2.2rem; }
+
+        .stat-bar { height: 10px; background: #222; border: 1px solid #444; position: relative; margin-top: 5px; }
+        .stat-fill { height: 100%; background: var(--kof-blue); box-shadow: 0 0 10px var(--kof-blue); }
+
+        /* --- CONTINUE SCREEN --- */
+        .continue-section {
+            display: flex; flex-direction: column; align-items: center;
+            margin-top: 100px; padding-bottom: 100px;
+        }
+        .continue-btn {
+            background: var(--kof-blue); color: white;
+            padding: 10px 40px; font-size: 3rem; font-weight: 900;
+            font-style: italic; border: 4px solid white;
+            box-shadow: 8px 8px 0 var(--kof-red);
+            transition: transform 0.1s;
+        }
+        .continue-btn:active { transform: translate(4px, 4px); box-shadow: 4px 4px 0 var(--kof-red); }
+        .countdown-num {
+            font-size: 8rem; line-height: 1; color: var(--neo-gold);
+            text-shadow: 5px 5px 0 #000; margin-top: 20px;
+        }
+
+        /* --- BILLING SCREEN --- */
+        #billing-screen {
+            background: #000; color: #fff; z-index: 1500;
+        }
+        .billing-header {
+            background: var(--kof-red); color: #fff; padding: 20px;
+            font-size: 2.5rem; font-weight: 900; font-style: italic;
+            text-align: center; border-bottom: 8px solid #fff;
+            text-shadow: 3px 3px 0 #000; width: 100%;
+        }
+        .billing-row {
+            border-bottom: 1px dashed rgba(255,255,255,0.2);
+            padding: 15px 0; display: flex; justify-content: space-between;
+        }
+        .authorize-btn {
+            background: #00ff00; color: #000; padding: 15px 40px;
+            font-size: 2rem; font-weight: 900; border: 4px solid #fff;
+            box-shadow: 6px 6px 0 var(--vhs-black); cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .authorize-btn:hover { 
+            background: #fff;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+
+        /* --- SCROLLING DASHBOARD --- */
+        .scroll-container {
+            width: 100%; max-width: 900px; padding: 40px 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .service-card {
+            border-left: 10px solid var(--kof-red); background: #111;
+            padding: 1.2rem; width: 100%;
+            transition: 0.2s; cursor: pointer;
+            position: relative; overflow: hidden;
+        }
+        .service-card:hover { background: #222; border-left-color: #fff; }
+
+        .glitch-text { animation: glitch 0.3s infinite; }
+        @keyframes glitch {
+            0% { transform: translate(1px, 0); }
+            50% { transform: translate(-1px, 1px); }
+            100% { transform: translate(0); }
+        }
+
+        .btn-close {
+            background: var(--kof-red); color: white; padding: 5px 20px;
+            font-weight: bold; font-style: italic; border: 2px solid white;
+            cursor: pointer; margin-top: 20px;
+        }
+        .btn-close:hover { background: white; color: black; }
+    </style>
+</head>
+<body>
+    <div class="crt-overlay"></div>
+    <div class="vignette"></div>
+    <canvas id="noise"></canvas>
+
+    <!-- TV MODAL -->
+    <div id="crt-modal">
+        <div class="tv-frame">
+            <div class="tv-screen">
+                <div class="flex justify-between items-center border-b border-cyan-900/50 pb-2 mb-4">
+                    <span id="modal-title" class="text-white text-2xl font-black italic uppercase">DATA_STREAM</span>
+                    <span class="text-xs opacity-50">SIGNAL: LOCK</span>
+                </div>
+                <div id="modal-content" class="text-xl text-emerald-400 leading-tight">
+                    ANALYZING...
+                </div>
+                <button class="btn-close" onclick="closeModal()">CLOSE_CHANNEL</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. BOOT SEQUENCE -->
+    <div id="boot" class="fixed inset-0 flex flex-col items-center justify-center bg-black z-[1000]">
+        <div class="text-4xl tracking-widest mb-4">MALONE_ENGINE_V1.5</div>
+        <div class="w-72 h-4 border-2 border-white/10">
+            <div id="boot-bar" class="h-full bg-cyan-500 w-0"></div>
+        </div>
+        <div class="mt-6 text-cyan-400 opacity-60 uppercase text-xl">System Initialization...</div>
+    </div>
+
+    <!-- 2. HUB (DRAG TAPE) -->
+    <div id="hub" class="min-h-screen flex flex-col items-center justify-center hidden">
+        <h1 class="kof-title-main">ROBERT<br>MALONE JR.</h1>
+        <p class="text-2xl mt-4 opacity-70 italic">15 YR WEB // 10 YR CODE // 3 YR AI</p>
+        
+        <div id="vhs-tape">
+            <div class="flex justify-between w-full mb-4">
+                <div class="w-14 h-10 bg-black rounded border border-white/5"></div>
+                <div class="w-14 h-10 bg-black rounded border border-white/5"></div>
+            </div>
+            <div class="w-full bg-white text-black p-2 font-black text-center border-l-8 border-red-600 text-sm">
+                IP_ASSET_ACQUISITION_2026
+            </div>
+        </div>
+        <div id="vhs-slot">INSERT TAPE TO EXECUTE</div>
+    </div>
+
+    <!-- 3. TRANSITION -->
+    <div id="transition" class="fixed inset-0 flex flex-col items-center justify-center bg-black hidden z-[950]">
+        <h1 class="text-7xl font-black italic text-amber-500 glitch-text uppercase">Program Loaded</h1>
+        <div class="text-3xl mt-4 text-amber-200" id="load-msg">PARSING SERVICES...</div>
+    </div>
+
+    <!-- 4. DASHBOARD -->
+    <div id="program" class="min-h-screen hidden flex flex-col items-center overflow-y-auto pt-10">
+        <div class="scroll-container">
+            <!-- IDENTITY PANEL -->
+            <div class="neo-panel flex flex-col md:flex-row gap-10">
+                <div class="flex-1">
+                    <div class="kof-header">PROFILE_DATA</div>
+                    <h1 class="text-5xl font-black text-white uppercase">Robert Malone Jr.</h1>
+                    <p class="text-2xl text-emerald-400 mt-2 font-bold uppercase tracking-tighter">Full-Stack IP Architect</p>
+                    <p class="mt-4 opacity-80 text-lg">Leveraging 15 years of design and 10 years of logic to build elite digital assets.</p>
+                </div>
+                <div class="w-full md:w-72 space-y-4">
+                    <div class="kof-header">EXP_GAUGE</div>
+                    <div>
+                        <div class="flex justify-between text-xs"><span>WEB_DESIGN (15YR)</span><span>MAX</span></div>
+                        <div class="stat-bar"><div class="stat-fill w-full"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs"><span>CODING (10YR)</span><span>ELITE</span></div>
+                        <div class="stat-bar"><div class="stat-fill w-[90%]"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs"><span>AI_FUSION (3YR)</span><span>ADVANCED</span></div>
+                        <div class="stat-bar"><div class="stat-fill w-[45%]"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SERVICES -->
+            <div class="neo-panel">
+                <div class="kof-header">SERVICE_SELECTION // CLICK TO ANALYZE</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="service-card" onclick="openService('Intellectual Property')">
+                        <h3 class="text-xl font-bold uppercase">Intellectual Property</h3>
+                        <p class="text-sm opacity-60">Branding & Ownership Strategies</p>
+                    </div>
+                    <div class="service-card" onclick="openService('Graphic Design')">
+                        <h3 class="text-xl font-bold uppercase">Graphic Design</h3>
+                        <p class="text-sm opacity-60">High-End Visual Assets</p>
+                    </div>
+                    <div class="service-card" onclick="openService('Web & Mobile Apps')">
+                        <h3 class="text-xl font-bold uppercase">Web & Mobile Apps</h3>
+                        <p class="text-sm opacity-60">React, Next.js & Native Builds</p>
+                    </div>
+                    <div class="service-card" onclick="openService('SaaS Solutions')">
+                        <h3 class="text-xl font-bold uppercase">SaaS Solutions</h3>
+                        <p class="text-sm opacity-60">Scalable Software Builds</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PRICING -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                <div class="neo-panel clickable-panel" onclick="openService('Acquisition Stages')">
+                    <div class="kof-header">ACQUISITION_STAGES // VIEW_PHASES</div>
+                    <div class="flex justify-between items-center opacity-70">
+                        <span class="text-lg uppercase">Total Build</span>
+                        <span class="gold-tag">$400</span>
+                    </div>
+                </div>
+                <div class="neo-panel clickable-panel" onclick="openService('Maintenance Log')">
+                    <div class="kof-header">MAINTENANCE_LOG // VIEW_SUPPORT</div>
+                    <div class="flex justify-between items-center opacity-70">
+                        <span class="text-lg uppercase">Support</span>
+                        <span class="text-emerald-400 font-bold">$49.99/mo</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTINUE SECTION -->
+            <div id="continue-trigger" class="continue-section">
+                <div class="opacity-30 text-2xl tracking-[8px] mb-4">
+                    - END_OF_PROGRAM -
+                </div>
+                <button class="continue-btn" onclick="openBilling()">CONTINUE?</button>
+                <div id="countdown" class="countdown-num">30</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. BILLING SCREEN -->
+    <div id="billing-screen" class="fixed inset-0 hidden flex flex-col items-center p-6 overflow-y-auto">
+        <div class="billing-header uppercase glitch-text">Authorization Required</div>
+        <div class="scroll-container bg-neutral-900 border-x-4 border-white p-10 mt-10">
+            <h2 class="text-4xl font-black italic mb-6 border-b-2 border-red-500 inline-block">ACQUISITION_SUMMARY</h2>
+            
+            <div class="w-full space-y-4 mb-10">
+                <div class="billing-row">
+                    <span class="text-xl opacity-60">INITIAL_DEPOSIT (BUILD_PHASE_01)</span>
+                    <span class="text-xl font-bold">$250.00</span>
+                </div>
+                <div class="billing-row">
+                    <span class="text-xl opacity-60">FUTURE_DELIVERY (BUILD_PHASE_02)</span>
+                    <span class="text-xl font-bold">$150.00</span>
+                </div>
+                <div class="billing-row">
+                    <span class="text-xl opacity-60">MAINTENANCE_SUBSCRIPTION (MONTHLY)</span>
+                    <span class="text-xl font-bold">$49.99</span>
+                </div>
+                <div class="flex justify-between pt-6 border-t-4 border-white">
+                    <span class="text-3xl font-black italic">DUE_NOW</span>
+                    <span class="text-3xl font-black text-emerald-400">$250.00</span>
+                </div>
+            </div>
+
+            <div class="neo-panel bg-black/50 p-6 border-dashed border-2 border-amber-500">
+                <div class="text-amber-500 font-bold mb-2 uppercase">Terms of Asset Engagement</div>
+                <p class="text-sm opacity-70 italic">
+                    By clicking authorize, you initiate the 24h response promise and reserve the IP architect's build cycle. Assets remain under escrow until Phase 02 completion. Redirecting to Stripe Secure.
+                </p>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-6 mt-10 w-full justify-center items-center">
+                <button id="auth-button" class="authorize-btn uppercase" onclick="initiatePayment()">Authorize_Transfer</button>
+                <button class="text-red-500 font-bold hover:underline uppercase" onclick="loopBackToHub()">Decline_Asset</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const boot = document.getElementById('boot');
+        const hub = document.getElementById('hub');
+        const transition = document.getElementById('transition');
+        const program = document.getElementById('program');
+        const billing = document.getElementById('billing-screen');
+        const tape = document.getElementById('vhs-tape');
+        const slot = document.getElementById('vhs-slot');
+        const modal = document.getElementById('crt-modal');
+        const mTitle = document.getElementById('modal-title');
+        const mContent = document.getElementById('modal-content');
+        const countdownEl = document.getElementById('countdown');
+
+        let countdownVal = 30;
+        let countdownActive = false;
+        let countdownInterval;
+
+        // --- STRIPE CONFIG ---
+        // Your specific product checkout link
+        const STRIPE_LINK = "https://buy.stripe.com/14A3cncAV3pbfu26G83ks00";
+
+        function initiatePayment() {
+            const btn = document.getElementById('auth-button');
+            btn.innerText = "HANDSHAKE_INITIATED...";
+            btn.style.background = "var(--crt-amber)";
+            btn.disabled = true;
+            
+            // Visual glitch effect before redirect
+            document.body.style.filter = "brightness(3) contrast(2) hue-rotate(90deg)";
+            
+            setTimeout(() => {
+                window.location.href = STRIPE_LINK;
+            }, 1000);
+        }
+
+        const serviceData = {
+            'Intellectual Property': 'Expert development of unique IP assets. We handle naming, brand positioning, and proprietary design systems. Our strategy ensures you own the full equity of your digital identity with a scalable framework ready for legal protection and market dominance.',
+            'Graphic Design': 'Creation of high-fidelity visual assets, including custom UI components, vector-based iconography, and immersive storytelling graphics. Every asset is engineered to maintain visual integrity across all resolutions—from 4K displays to mobile screens.',
+            'Web & Mobile Apps': 'Full-stack engineering utilizing React.js and Next.js for web excellence, alongside React Native for cross-platform mobile dominance. We focus on server-side rendering (SSR), high-speed API integration, and fluid 60fps user interface interactions.',
+            'SaaS Solutions': 'Architecture for scalable "Software as a Service" platforms. We build multi-tenant environments, integrated billing systems (Stripe/Paypal), and robust database management to support thousands of concurrent users with zero downtime.',
+            'Acquisition Stages': 'BUILD PHASE 01: Lock-in Deposit [$250] initiates asset discovery and architecture. \n\nBUILD PHASE 02: Final Delivery [$150] completes the asset transfer and system deployment. \n\nTOTAL PROJECT COST: $400. \n\nThis tiered split ensures alignment on milestones and protects the integrity of the build process.',
+            'Maintenance Log': 'ONBOARDING: Month 01 is 100% FREE. \n\nRETAINER: $49.99/mo starting Month 02. \n\n24H RESPONSE PROMISE: We guarantee an implementation response within 24 hours of any request. This covers bug fixes, text updates, UI adjustments, and general security patching to keep your IP asset optimized.'
+        };
+
+        function openService(id) {
+            mTitle.innerText = id;
+            mContent.style.whiteSpace = 'pre-wrap';
+            mContent.innerText = serviceData[id];
+            modal.classList.add('visible');
+        }
+
+        function closeModal() {
+            modal.classList.remove('visible');
+        }
+
+        function openBilling() {
+            clearInterval(countdownInterval);
+            program.classList.add('hidden');
+            billing.classList.remove('hidden');
+            window.scrollTo(0,0);
+        }
+
+        function startCountdown() {
+            if (countdownActive) return;
+            countdownActive = true;
+            countdownInterval = setInterval(() => {
+                countdownVal--;
+                countdownEl.innerText = countdownVal;
+                if (countdownVal <= 0) {
+                    clearInterval(countdownInterval);
+                    loopBackToHub();
+                }
+            }, 1000);
+        }
+
+        function loopBackToHub() {
+            document.body.style.filter = "invert(1) hue-rotate(180deg) blur(5px)";
+            setTimeout(() => {
+                document.body.style.filter = "none";
+                program.classList.add('hidden');
+                billing.classList.add('hidden');
+                hub.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                tape.style.left = '50%';
+                tape.style.top = '55%';
+                slot.classList.remove('active');
+                slot.innerText = "INSERT TAPE TO EXECUTE";
+                countdownVal = 30;
+                countdownEl.innerText = "30";
+                countdownActive = false;
+            }, 500);
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !program.classList.contains('hidden')) {
+                    startCountdown();
+                }
+            });
+        }, { threshold: 0.5 });
+        observer.observe(document.getElementById('continue-trigger'));
+
+        window.onload = () => {
+            let p = 0;
+            const iv = setInterval(() => {
+                p += Math.random() * 15;
+                document.getElementById('boot-bar').style.width = Math.min(p, 100) + '%';
+                if(p >= 100) { clearInterval(iv); setTimeout(() => { boot.classList.add('hidden'); hub.classList.remove('hidden'); }, 500); }
+            }, 90);
+        };
+
+        let isDragging = false;
+        let startPos = { x: 0, y: 0 };
+
+        const startDrag = (e) => {
+            if(e.target.closest('#vhs-tape')) {
+                isDragging = true;
+                tape.classList.add('dragging');
+                const t = e.touches ? e.touches[0] : e;
+                startPos.x = t.clientX - tape.offsetLeft;
+                startPos.y = t.clientY - tape.offsetTop;
+            }
+        };
+
+        const doDrag = (e) => {
+            if(!isDragging) return;
+            const t = e.touches ? e.touches[0] : e;
+            tape.style.left = (t.clientX - startPos.x) + 'px';
+            tape.style.top = (t.clientY - startPos.y) + 'px';
+            const tr = tape.getBoundingClientRect(), sr = slot.getBoundingClientRect();
+            if(tr.bottom > sr.top && tr.top < sr.bottom && tr.right > sr.left && tr.left < sr.right) {
+                slot.classList.add('active'); slot.innerText = "DETECTING_ASSET...";
+            } else { slot.classList.remove('active'); slot.innerText = "INSERT TAPE TO EXECUTE"; }
+        };
+
+        const stopDrag = () => {
+            if(!isDragging) return;
+            isDragging = false;
+            tape.classList.remove('dragging');
+            if(slot.classList.contains('active')) { runProgramSequence(); }
+            else { tape.style.left = '50%'; tape.style.top = '55%'; }
+        };
+
+        function runProgramSequence() {
+            hub.classList.add('hidden'); transition.classList.remove('hidden');
+            const msgs = ["MOUNTING...", "DECRYPTING...", "SYNCING...", "COMPLETE."];
+            let i = 0;
+            const iv = setInterval(() => {
+                document.getElementById('load-msg').innerText = msgs[i];
+                i++;
+                if(i >= msgs.length) {
+                    clearInterval(iv);
+                    setTimeout(() => { transition.classList.add('hidden'); program.classList.remove('hidden'); document.body.style.overflow = 'auto'; }, 600);
+                }
+            }, 500);
+        }
+
+        window.addEventListener('mousedown', startDrag);
+        window.addEventListener('mousemove', doDrag);
+        window.addEventListener('mouseup', stopDrag);
+        window.addEventListener('touchstart', startDrag, {passive: false});
+        window.addEventListener('touchmove', doDrag, {passive: false});
+        window.addEventListener('touchend', stopDrag);
+
+        const canvas = document.getElementById('noise');
+        const ctx = canvas.getContext('2d');
+        function noise() {
+            canvas.width = 120; canvas.height = 120;
+            const img = ctx.createImageData(120, 120);
+            for (let i = 0; i < img.data.length; i += 4) {
+                const v = Math.random() * 255;
+                img.data[i] = img.data[i+1] = img.data[i+2] = v;
+                img.data[i+3] = 255;
+            }
+            ctx.putImageData(img, 0, 0);
+            requestAnimationFrame(noise);
+        }
+        noise();
+    </script>
+</body>
+</html>
