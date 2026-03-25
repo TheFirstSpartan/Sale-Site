@@ -208,7 +208,6 @@
     <div class="vignette"></div>
     <canvas id="noise"></canvas>
 
-    <!-- TV MODAL -->
     <div id="crt-modal">
         <div class="tv-frame">
             <div class="tv-screen">
@@ -224,7 +223,6 @@
         </div>
     </div>
 
-    <!-- 1. BOOT SEQUENCE -->
     <div id="boot" class="fixed inset-0 flex flex-col items-center justify-center bg-black z-[1000]">
         <div class="text-4xl tracking-widest mb-4">MALONE_ENGINE_V1.5</div>
         <div class="w-72 h-4 border-2 border-white/10">
@@ -233,7 +231,6 @@
         <div class="mt-6 text-cyan-400 opacity-60 uppercase text-xl">System Initialization...</div>
     </div>
 
-    <!-- 2. HUB (DRAG TAPE) -->
     <div id="hub" class="min-h-screen flex flex-col items-center justify-center hidden">
         <h1 class="kof-title-main">ROBERT<br>MALONE JR.</h1>
         <p class="text-2xl mt-4 opacity-70 italic">15 YR WEB // 10 YR CODE // 3 YR AI</p>
@@ -250,16 +247,13 @@
         <div id="vhs-slot">INSERT TAPE TO EXECUTE</div>
     </div>
 
-    <!-- 3. TRANSITION -->
     <div id="transition" class="fixed inset-0 flex flex-col items-center justify-center bg-black hidden z-[950]">
         <h1 class="text-7xl font-black italic text-amber-500 glitch-text uppercase">Program Loaded</h1>
         <div class="text-3xl mt-4 text-amber-200" id="load-msg">PARSING SERVICES...</div>
     </div>
 
-    <!-- 4. DASHBOARD -->
     <div id="program" class="min-h-screen hidden flex flex-col items-center overflow-y-auto pt-10">
         <div class="scroll-container">
-            <!-- IDENTITY PANEL -->
             <div class="neo-panel flex flex-col md:flex-row gap-10">
                 <div class="flex-1">
                     <div class="kof-header">PROFILE_DATA</div>
@@ -284,7 +278,6 @@
                 </div>
             </div>
 
-            <!-- SERVICES -->
             <div class="neo-panel">
                 <div class="kof-header">SERVICE_SELECTION // CLICK TO ANALYZE</div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -307,7 +300,6 @@
                 </div>
             </div>
 
-            <!-- PRICING -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
                 <div class="neo-panel clickable-panel" onclick="openService('Acquisition Stages')">
                     <div class="kof-header">ACQUISITION_STAGES // VIEW_PHASES</div>
@@ -325,18 +317,14 @@
                 </div>
             </div>
 
-            <!-- CONTINUE SECTION -->
             <div id="continue-trigger" class="continue-section">
-                <div class="opacity-30 text-2xl tracking-[8px] mb-4">
-                    - END_OF_PROGRAM -
-                </div>
+                <div class="opacity-30 text-2xl tracking-[8px] mb-4">- END_OF_PROGRAM -</div>
                 <button class="continue-btn" onclick="openBilling()">CONTINUE?</button>
                 <div id="countdown" class="countdown-num">30</div>
             </div>
         </div>
     </div>
 
-    <!-- 5. BILLING SCREEN -->
     <div id="billing-screen" class="fixed inset-0 hidden flex flex-col items-center p-6 overflow-y-auto">
         <div class="billing-header uppercase glitch-text">Authorization Required</div>
         <div class="scroll-container bg-neutral-900 border-x-4 border-white p-10 mt-10">
@@ -344,15 +332,15 @@
             
             <div class="w-full space-y-4 mb-10">
                 <div class="billing-row">
-                    <span class="text-xl opacity-60">INITIAL_DEPOSIT (BUILD_PHASE_01)</span>
+                    <span class="text-xl opacity-60">INITIAL_DEPOSIT (PHASE_01)</span>
                     <span class="text-xl font-bold">$250.00</span>
                 </div>
                 <div class="billing-row">
-                    <span class="text-xl opacity-60">FUTURE_DELIVERY (BUILD_PHASE_02)</span>
+                    <span class="text-xl opacity-60">FUTURE_DELIVERY (PHASE_02)</span>
                     <span class="text-xl font-bold">$150.00</span>
                 </div>
                 <div class="billing-row">
-                    <span class="text-xl opacity-60">MAINTENANCE_SUBSCRIPTION (MONTHLY)</span>
+                    <span class="text-xl opacity-60">MAINTENANCE (MONTHLY)</span>
                     <span class="text-xl font-bold">$49.99</span>
                 </div>
                 <div class="flex justify-between pt-6 border-t-4 border-white">
@@ -364,7 +352,7 @@
             <div class="neo-panel bg-black/50 p-6 border-dashed border-2 border-amber-500">
                 <div class="text-amber-500 font-bold mb-2 uppercase">Terms of Asset Engagement</div>
                 <p class="text-sm opacity-70 italic">
-                    By clicking authorize, you initiate the 24h response promise and reserve the IP architect's build cycle. Assets remain under escrow until Phase 02 completion. Redirecting to Stripe Secure.
+                    By clicking authorize, you initiate the 24h response promise and reserve the IP architect's build cycle. Redirecting to Stripe Secure.
                 </p>
             </div>
 
@@ -392,8 +380,6 @@
         let countdownActive = false;
         let countdownInterval;
 
-        // --- STRIPE CONFIG ---
-        // Your specific product checkout link
         const STRIPE_LINK = "https://buy.stripe.com/14A3cncAV3pbfu26G83ks00";
 
         function initiatePayment() {
@@ -401,22 +387,17 @@
             btn.innerText = "HANDSHAKE_INITIATED...";
             btn.style.background = "var(--crt-amber)";
             btn.disabled = true;
-            
-            // Visual glitch effect before redirect
             document.body.style.filter = "brightness(3) contrast(2) hue-rotate(90deg)";
-            
-            setTimeout(() => {
-                window.location.href = STRIPE_LINK;
-            }, 1000);
+            setTimeout(() => { window.location.href = STRIPE_LINK; }, 1000);
         }
 
         const serviceData = {
-            'Intellectual Property': 'Expert development of unique IP assets. We handle naming, brand positioning, and proprietary design systems. Our strategy ensures you own the full equity of your digital identity with a scalable framework ready for legal protection and market dominance.',
-            'Graphic Design': 'Creation of high-fidelity visual assets, including custom UI components, vector-based iconography, and immersive storytelling graphics. Every asset is engineered to maintain visual integrity across all resolutions—from 4K displays to mobile screens.',
-            'Web & Mobile Apps': 'Full-stack engineering utilizing React.js and Next.js for web excellence, alongside React Native for cross-platform mobile dominance. We focus on server-side rendering (SSR), high-speed API integration, and fluid 60fps user interface interactions.',
-            'SaaS Solutions': 'Architecture for scalable "Software as a Service" platforms. We build multi-tenant environments, integrated billing systems (Stripe/Paypal), and robust database management to support thousands of concurrent users with zero downtime.',
-            'Acquisition Stages': 'BUILD PHASE 01: Lock-in Deposit [$250] initiates asset discovery and architecture. \n\nBUILD PHASE 02: Final Delivery [$150] completes the asset transfer and system deployment. \n\nTOTAL PROJECT COST: $400. \n\nThis tiered split ensures alignment on milestones and protects the integrity of the build process.',
-            'Maintenance Log': 'ONBOARDING: Month 01 is 100% FREE. \n\nRETAINER: $49.99/mo starting Month 02. \n\n24H RESPONSE PROMISE: We guarantee an implementation response within 24 hours of any request. This covers bug fixes, text updates, UI adjustments, and general security patching to keep your IP asset optimized.'
+            'Intellectual Property': 'Expert development of unique IP assets. We handle naming, brand positioning, and proprietary design systems.',
+            'Graphic Design': 'Creation of high-fidelity visual assets, including custom UI components and vector iconography.',
+            'Web & Mobile Apps': 'Full-stack engineering utilizing React.js and Next.js for web excellence.',
+            'SaaS Solutions': 'Architecture for scalable "Software as a Service" platforms with multi-tenant environments.',
+            'Acquisition Stages': 'PHASE 01: Lock-in Deposit [$250] initiates architecture. \n\nPHASE 02: Final Delivery [$150] completes the transfer.',
+            'Maintenance Log': 'ONBOARDING: Month 01 FREE. \n\nRETAINER: $49.99/mo starting Month 02. Includes 24h response promise.'
         };
 
         function openService(id) {
@@ -426,9 +407,7 @@
             modal.classList.add('visible');
         }
 
-        function closeModal() {
-            modal.classList.remove('visible');
-        }
+        function closeModal() { modal.classList.remove('visible'); }
 
         function openBilling() {
             clearInterval(countdownInterval);
@@ -443,10 +422,7 @@
             countdownInterval = setInterval(() => {
                 countdownVal--;
                 countdownEl.innerText = countdownVal;
-                if (countdownVal <= 0) {
-                    clearInterval(countdownInterval);
-                    loopBackToHub();
-                }
+                if (countdownVal <= 0) { clearInterval(countdownInterval); loopBackToHub(); }
             }, 1000);
         }
 
@@ -454,26 +430,16 @@
             document.body.style.filter = "invert(1) hue-rotate(180deg) blur(5px)";
             setTimeout(() => {
                 document.body.style.filter = "none";
-                program.classList.add('hidden');
-                billing.classList.add('hidden');
-                hub.classList.remove('hidden');
+                program.classList.add('hidden'); billing.classList.add('hidden'); hub.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
-                tape.style.left = '50%';
-                tape.style.top = '55%';
-                slot.classList.remove('active');
-                slot.innerText = "INSERT TAPE TO EXECUTE";
-                countdownVal = 30;
-                countdownEl.innerText = "30";
-                countdownActive = false;
+                tape.style.left = '50%'; tape.style.top = '55%';
+                slot.classList.remove('active'); slot.innerText = "INSERT TAPE TO EXECUTE";
+                countdownVal = 30; countdownEl.innerText = "30"; countdownActive = false;
             }, 500);
         }
 
         const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting && !program.classList.contains('hidden')) {
-                    startCountdown();
-                }
-            });
+            entries.forEach(entry => { if (entry.isIntersecting && !program.classList.contains('hidden')) startCountdown(); });
         }, { threshold: 0.5 });
         observer.observe(document.getElementById('continue-trigger'));
 
@@ -488,33 +454,26 @@
 
         let isDragging = false;
         let startPos = { x: 0, y: 0 };
-
         const startDrag = (e) => {
             if(e.target.closest('#vhs-tape')) {
-                isDragging = true;
-                tape.classList.add('dragging');
+                isDragging = true; tape.classList.add('dragging');
                 const t = e.touches ? e.touches[0] : e;
-                startPos.x = t.clientX - tape.offsetLeft;
-                startPos.y = t.clientY - tape.offsetTop;
+                startPos.x = t.clientX - tape.offsetLeft; startPos.y = t.clientY - tape.offsetTop;
             }
         };
-
         const doDrag = (e) => {
             if(!isDragging) return;
             const t = e.touches ? e.touches[0] : e;
-            tape.style.left = (t.clientX - startPos.x) + 'px';
-            tape.style.top = (t.clientY - startPos.y) + 'px';
+            tape.style.left = (t.clientX - startPos.x) + 'px'; tape.style.top = (t.clientY - startPos.y) + 'px';
             const tr = tape.getBoundingClientRect(), sr = slot.getBoundingClientRect();
             if(tr.bottom > sr.top && tr.top < sr.bottom && tr.right > sr.left && tr.left < sr.right) {
                 slot.classList.add('active'); slot.innerText = "DETECTING_ASSET...";
             } else { slot.classList.remove('active'); slot.innerText = "INSERT TAPE TO EXECUTE"; }
         };
-
         const stopDrag = () => {
             if(!isDragging) return;
-            isDragging = false;
-            tape.classList.remove('dragging');
-            if(slot.classList.contains('active')) { runProgramSequence(); }
+            isDragging = false; tape.classList.remove('dragging');
+            if(slot.classList.contains('active')) runProgramSequence();
             else { tape.style.left = '50%'; tape.style.top = '55%'; }
         };
 
@@ -524,20 +483,12 @@
             let i = 0;
             const iv = setInterval(() => {
                 document.getElementById('load-msg').innerText = msgs[i];
-                i++;
-                if(i >= msgs.length) {
-                    clearInterval(iv);
-                    setTimeout(() => { transition.classList.add('hidden'); program.classList.remove('hidden'); document.body.style.overflow = 'auto'; }, 600);
-                }
+                if(++i >= msgs.length) { clearInterval(iv); setTimeout(() => { transition.classList.add('hidden'); program.classList.remove('hidden'); document.body.style.overflow = 'auto'; }, 600); }
             }, 500);
         }
 
-        window.addEventListener('mousedown', startDrag);
-        window.addEventListener('mousemove', doDrag);
-        window.addEventListener('mouseup', stopDrag);
-        window.addEventListener('touchstart', startDrag, {passive: false});
-        window.addEventListener('touchmove', doDrag, {passive: false});
-        window.addEventListener('touchend', stopDrag);
+        window.addEventListener('mousedown', startDrag); window.addEventListener('mousemove', doDrag); window.addEventListener('mouseup', stopDrag);
+        window.addEventListener('touchstart', startDrag, {passive: false}); window.addEventListener('touchmove', doDrag, {passive: false}); window.addEventListener('touchend', stopDrag);
 
         const canvas = document.getElementById('noise');
         const ctx = canvas.getContext('2d');
@@ -546,11 +497,9 @@
             const img = ctx.createImageData(120, 120);
             for (let i = 0; i < img.data.length; i += 4) {
                 const v = Math.random() * 255;
-                img.data[i] = img.data[i+1] = img.data[i+2] = v;
-                img.data[i+3] = 255;
+                img.data[i] = img.data[i+1] = img.data[i+2] = v; img.data[i+3] = 255;
             }
-            ctx.putImageData(img, 0, 0);
-            requestAnimationFrame(noise);
+            ctx.putImageData(img, 0, 0); requestAnimationFrame(noise);
         }
         noise();
     </script>
